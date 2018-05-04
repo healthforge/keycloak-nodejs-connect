@@ -22,6 +22,7 @@ const UUID = require('../../uuid');
 const session = require('express-session');
 
 let kc = null;
+let kcMultitenanted = null;
 
 test('Should raise an error when no configuration is provided.', t => {
   t.throws(function () {
@@ -40,33 +41,57 @@ test('setup', t => {
     'public-client': true
   };
 
+  let kcConfigMultitenanted = [{
+    'realm': 'test-realm',
+    'auth-server-url': 'http://localhost:8080/auth',
+    'ssl-required': 'external',
+    'resource': 'nodejs-connect',
+    'public-client': true
+  }, {
+    'realm': 'test-realm-2',
+    'auth-server-url': 'http://localhost:8080/auth',
+    'ssl-required': 'external',
+    'resource': 'nodejs-connect',
+    'public-client': true
+  }, {
+    'realm': 'test-realm',
+    'auth-server-url': 'https://keycloak.example.com:8080/auth',
+    'ssl-required': 'external',
+    'resource': 'nodejs-connect',
+    'public-client': true
+  }];
+
   let memoryStore = new session.MemoryStore();
   kc = new Keycloak({store: memoryStore, scope: 'offline_support'}, kcConfig);
+
+  let memoryStoreMultitenanted = new session.MemoryStore();
+  kcMultitenanted = new Keycloak({store: memoryStoreMultitenanted, scope: 'offline_support'}, kcConfigMultitenanted);
+
   t.end();
 });
 
 test('Should verify the realm name of the config object.', t => {
-  t.equal(kc.configs['test-realm'].realm, 'test-realm');
+  t.equal(kc.configs['http://localhost:8080/auth/realms/test-realm'].realm, 'test-realm');
   t.end();
 });
 
 test('Should verify if login URL has the configured realm.', t => {
-  t.equal(kc.loginUrl({kauth: {realmName: 'test-realm'}}).indexOf(kc.configs['test-realm'].realm) > 0, true);
+  t.equal(kc.loginUrl({kauth: {realmUrl: 'http://localhost:8080/auth/realms/test-realm'}}).indexOf(kc.configs['http://localhost:8080/auth/realms/test-realm'].realm) > 0, true);
   t.end();
 });
 
 test('Should verify if login URL has the custom scope value.', t => {
-  t.equal(kc.loginUrl({kauth: {realmName: 'test-realm'}}).indexOf(kc.configs['test-realm'].scope) > 0, true);
+  t.equal(kc.loginUrl({kauth: {realmUrl: 'http://localhost:8080/auth/realms/test-realm'}}).indexOf(kc.configs['http://localhost:8080/auth/realms/test-realm'].scope) > 0, true);
   t.end();
 });
 
 test('Should verify if login URL has the default scope value.', t => {
-  t.equal(kc.loginUrl({kauth: {realmName: 'test-realm'}}).indexOf('openid') > 0, true);
+  t.equal(kc.loginUrl({kauth: {realmUrl: 'http://localhost:8080/auth/realms/test-realm'}}).indexOf('openid') > 0, true);
   t.end();
 });
 
 test('Should verify if logout URL has the configured realm.', t => {
-  t.equal(kc.logoutUrl({kauth: {realmName: 'test-realm'}}).indexOf(kc.configs['test-realm'].realm) > 0, true);
+  t.equal(kc.logoutUrl({kauth: {realmUrl: 'http://localhost:8080/auth/realms/test-realm'}}).indexOf(kc.configs['http://localhost:8080/auth/realms/test-realm'].realm) > 0, true);
   t.end();
 });
 
@@ -77,6 +102,19 @@ test('Should generate a correct UUID.', t => {
 });
 
 test('Should produce correct account url.', t => {
-  t.equal(kc.accountUrl({kauth: {realmName: 'test-realm'}}), 'http://localhost:8080/auth/realms/test-realm/account');
+  t.equal(kc.accountUrl({kauth: {realmUrl: 'http://localhost:8080/auth/realms/test-realm'}}), 'http://localhost:8080/auth/realms/test-realm/account');
+  t.end();
+});
+
+test('Should verify the realm name of the multi-tenanted config object', t => {
+  t.equal(kcMultitenanted.configs['http://localhost:8080/auth/realms/test-realm'].realm, 'test-realm');
+  t.equal(kcMultitenanted.configs['http://localhost:8080/auth/realms/test-realm'].authServerUrl, 'http://localhost:8080/auth');
+
+  t.equal(kcMultitenanted.configs['http://localhost:8080/auth/realms/test-realm-2'].realm, 'test-realm-2');
+  t.equal(kcMultitenanted.configs['http://localhost:8080/auth/realms/test-realm-2'].authServerUrl, 'http://localhost:8080/auth');
+
+  t.equal(kcMultitenanted.configs['https://keycloak.example.com:8080/auth/realms/test-realm'].realm, 'test-realm');
+  t.equal(kcMultitenanted.configs['https://keycloak.example.com:8080/auth/realms/test-realm'].authServerUrl, 'https://keycloak.example.com:8080/auth');
+
   t.end();
 });

@@ -17,9 +17,9 @@
 
 module.exports = function (resolver) {
   return function setup (request, response, next) {
-    request.kauth = {realmName: resolver(request)};
-    if (!request.kauth.realmName) {
-      throw new Error('Realm name cannot be resolved');
+    request.kauth = {realmUrl: resolver(request)};
+    if (!request.kauth.realmUrl) {
+      throw new Error('Realm url cannot be resolved');
     }
     next();
   };

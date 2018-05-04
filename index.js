@@ -72,9 +72,9 @@ function Keycloak (config, keycloakConfig) {
     realmConfig.scope = config.scope;
   });
 
-  this.configs = configs.reduce((previous, realmConfig) => Object.assign(previous, {[realmConfig.realm]: realmConfig}), {});
+  this.configs = configs.reduce((previous, realmConfig) => Object.assign(previous, {[realmConfig.realmUrl]: realmConfig}), {});
 
-  this.grantManagers = configs.reduce((previous, realmConfig) => Object.assign(previous, {[realmConfig.realm]: new GrantManager(realmConfig)}), {});
+  this.grantManagers = configs.reduce((previous, realmConfig) => Object.assign(previous, {[realmConfig.realmUrl]: new GrantManager(realmConfig)}), {});
 
   this.stores = [ BearerStore ];
 
@@ -115,7 +115,7 @@ Keycloak.prototype.middleware = function (options) {
   options.logout = options.logout || '/logout';
   options.admin = options.admin || '/';
 
-  const resolver = Object.keys(this.configs).length === 1 ? () => this.configs[Object.keys(this.configs)[0]].realm : options.realmResolver;
+  const resolver = Object.keys(this.configs).length === 1 ? () => this.configs[Object.keys(this.configs)[0]].realmUrl : options.realmResolver;
 
   if (!resolver) {
     throw new Error('Realm resolver must be provided for Multi-tenancy.');
@@ -276,11 +276,11 @@ Keycloak.prototype.getGrant = function (request, response) {
 };
 
 Keycloak.prototype.getGrantManager = function (request) {
-  return this.grantManagers[request.kauth.realmName];
+  return this.grantManagers[request.kauth.realmUrl];
 };
 
 Keycloak.prototype.getConfig = function (request) {
-  return this.configs[request.kauth.realmName];
+  return this.configs[request.kauth.realmUrl];
 };
 
 Keycloak.prototype.storeGrant = function (grant, request, response) {
