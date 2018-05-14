@@ -113,6 +113,12 @@ Config.prototype.configure = function configure (config) {
   this.secret = resolveValue((config.credentials || {}).secret || config.secret);
 
   /**
+   * Trust Proxy X-Forwarded headers
+   * @type {Boolean}
+   */
+  this.proxyAddressForwarding = resolveValue(config.proxyAddressForwarding || config['proxy-address-forwarding'] || false);
+
+  /**
    * If this is a public application or confidential.
    * @type {String}
    */
